@@ -1,0 +1,117 @@
+// Prisma schema for HireMind
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String      @id @default(uuid())
+  name            String
+  email           String      @unique
+  password        String
+  avatar          String?
+  college         String?
+  degree          String?
+  skills          String?     // JSON array string or comma separated
+  experienceLevel String?     // Fresher, 1-2 Years, 3-5 Years, 5+ Years
+  targetRole      String?     // e.g. Software Developer
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  interviews      Interview[]
+  resumes         Resume[]
+  skillScores     Skill[]
+  codingSubmissions CodingSubmission[]
+}
+
+model Interview {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobRole         String
+  experienceLevel String?     // Fresher, 1-2 Years, 3-5 Years, 5+ Years
+  interviewType   String      // Technical, HR, Behavioral, Coding, Mixed
+  difficulty      String      // Easy, Medium, Hard, Adaptive
+  totalQuestions  Int?        @default(5)
+  score           Float?      // Overall percentage score 0-100
+  duration        Int?        // in seconds
+  status          String      // in-progress, completed, abandoned
+  metadata        String?     // JSON for tracking asked question IDs, weak topics, history
+  createdAt       DateTime    @default(now())
+  completedAt     DateTime?
+
+  questions       Question[]
+}
+
+model Question {
+  id                  String    @id @default(uuid())
+  interviewId         String
+  interview           Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  questionId          String?   // Catalog question ID if from curated bank
+  question            String
+  category            String?   // Conceptual, Scenario, Debugging, Architecture, Project, Trade-off, Coding, Behavioral, SQL, Follow-up
+  subtopic            String?   // e.g. B+ Trees, Concurrency, Virtual DOM, Reactivity
+  difficulty          String    // Easy, Medium, Hard
+  expectedCompetencies String?  // JSON string array of key competencies evaluated
+  rubric              String?   // JSON string of scoring criteria
+  expectedDepth       String?   // Guidance on response depth/duration (e.g., "1-2 minutes with concrete examples")
+  constraints         String?   // Scenario or coding constraints
+  testCases           String?   // JSON string for coding questions
+  isFollowUp          Boolean   @default(false)
+  followUpObjectives  String?   // Probing goal for this follow-up
+  parentQuestionId    String?   // Link to previous question if this is a follow-up
+  answer              String?
+  score               Float?    // 0-10 overall question score
+  technicalAccuracy   Float?
+  relevance           Float?
+  completeness        Float?
+  clarity             Float?
+  problemSolving      Float?
+  communication       Float?
+  feedback            String?   // JSON object with strengths, improvements, missing concepts
+  idealAnswer         String?
+  createdAt           DateTime  @default(now())
+}
+
+model CodingSubmission {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId      String
+  problemTitle   String
+  category       String
+  difficulty     String
+  language       String    // python, javascript, java, cpp
+  code           String
+  status         String    // Accepted, Wrong Answer, Runtime Error, etc.
+  executionMode  String    // sandbox, static-analysis, simulated
+  passedTests    Int
+  totalTests     Int
+  runtimeMs      Float?
+  memoryMb       Float?
+  createdAt      DateTime  @default(now())
+}
+
+model Resume {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileUrl       String?
+  extractedText String
+  resumeScore   Float?
+  createdAt     DateTime @default(now())
+}
+
+model Skill {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill     String
+  score     Float
+  updatedAt DateTime @updatedAt
+}
